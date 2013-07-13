@@ -1,3 +1,4 @@
+// standard binary index tree
 #include<stdio.h>
 #include<string.h>
 #include<map>
