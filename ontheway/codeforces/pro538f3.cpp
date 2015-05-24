@@ -7,6 +7,7 @@ using namespace std;
 typedef long long int LD;
 
 // binary index tree. bit tree
+// must be 1 indexed instead of 0
 struct BitTree {
   LD c[maxn];
   inline int lowbit(int x) {
