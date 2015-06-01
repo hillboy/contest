@@ -4,7 +4,7 @@
 int noprime[maxn];
 int q[maxn], t;
 
-// Linear prime-number sieves
+// Linear prime number sieves
 void prepare() {
   int i, j;
   for(i=2;i<maxn;i++) {
