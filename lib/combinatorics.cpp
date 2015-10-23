@@ -106,7 +106,7 @@ struct Cn {
   LD revp[maxn];
   LD ans [maxn];
   int n;
-  Cn(int nn, Reverse* r) {
+  void init(int nn, Reverse* r) {
     n = nn;
     int i;
     p[0] = revp[0] = 1;
@@ -127,18 +127,29 @@ struct Cn {
     ans %= div;
     return ans;
   }
+  // pick i out of j
+  LD Cij(int i, int j) {
+    if(i>j)
+      return 0;
+    LD ans = p[j];
+    ans *= revp[i];
+    ans %= div;
+    ans *= revp[j-i];
+    ans %= div;
+    return ans;
+  }
   LD C(int a) {
     return ans[a];
   }
-};
+} cn;
 
 // O(1) for C(a,b) for a<=b<=n after O(n^2) preprocessing
 struct Cij_n {
   static const long long int div = 1000000007;
   int n;
-  int sz;
   LD p[maxn][maxn];
-  Cij_n(int nn) : n(nn), sz(nn+1) {
+  void init(int nn) {
+    n = nn;
     int i,j;
     p[0][0]=1;
     for(j=1;j<=n;j++) p[0][j]=0;
@@ -159,7 +170,7 @@ struct Cij_n {
   LD C(int a, int b) {
     return p[a][b];
   }
-};
+} cijn;
 
 void test_r1() {
   int i;
@@ -182,21 +193,22 @@ void test_r2() {
 
 int main() {
   int n, i,j;
-  test_r1();
-  test_r2();
+//  test_r1();
+//  test_r2();
 
   scanf("%d", &n);
-  Cij_n c(n);
-  Cn cc(n, &r1);
+  cijn.init(n);
+  cn.init(n, &r1);
 
   for(i=0;i<=n;i++) {
     for(j=0;j<=n;j++) {
-      printf("%lld ", c.C(i,j));
+      if(cn.Cij(j, i) != cijn.C(i, j)) {
+        printf("%d %d %lld %lld\n", i, j, cn.Cij(j,i), cijn.C(i,j));
+      }
     }
-    printf("\n");
   }
   for(i=0;i<=n;i++) {
-    printf("%lld ", cc.C(i));
+    printf("%lld ", cn.C(i));
   }
   return 0;
 }
