@@ -24,9 +24,9 @@ inline LD reverse(LD a) {
 struct BitTree1 {
   // to update d
 
-  int* c;
+  LD* c;
   int n;
-  BitTree1(int* cc) {
+  BitTree1(LD* cc) {
     n=0;
     c=cc;
   }
@@ -36,10 +36,13 @@ struct BitTree1 {
 
   void append(int x) {
     n++;
-    int pos = n;
-    c[pos]=n;
+    int pos = n, now=n-1;
+    c[pos]=x;
     int start = pos-lowbit(pos);
-
+    while(now>start) {
+      c[pos] = c[pos] * c[now] % div;
+      now -= lowbit(now);
+    }
   }
 
   void modify(int pos, int x, int y) {
@@ -56,9 +59,10 @@ struct BitTree1 {
   LD sum(int end) {
     if(end>n)
       end=n;
-    LD sum = 0;
+    LD sum = 1;
     while (end) {
       sum *= c[end];
+      sum%=div;
       end -= lowbit(end);
     }
     return sum;
@@ -68,11 +72,11 @@ struct BitTree1 {
 struct BitTree2 {
   // to update d
 
-  int* c;
-  int* sum;
+  LD* c;
+  LD* sum;
   int n;
-  BitTree2(int* cc, int* s, int nn) {
-    n=nn;
+  BitTree2(LD* cc, LD* s) {
+    n=0;
     c=cc;
     sum=s;
   }
@@ -102,6 +106,23 @@ struct BitTree2 {
       sum[pos]=tmp;
       pos+=lb;
     }
+  }
+
+  void append(int x) {
+    int start,now=n, lb;
+    n++;
+    lb=lowbit(n);
+    start = n-lb;
+    LD ans = 0;
+    // this works because we assume v[pos] is 0
+    while(now>start) {
+      ans *= c[now];
+      ans += sum[now];
+      ans%=div;
+      now-=lowbit(now);
+    }
+    sum[n] = ans;
+    modify(n, x);
   }
 
   void modifyd(int pos, int x, int y) {
@@ -145,7 +166,8 @@ struct BitTree2 {
 
 struct TreeNode {
   static int last[maxn],t;
-  static int cspace[maxn], sumspace[maxn], ct, sumt;
+  static int ct, sumt;
+  static LD cspace[maxn], sumspace[maxn];
   int ind,v,d,v0,d0,fa,sz,num;
   void add(int f,int);
 
@@ -205,8 +227,8 @@ int TreeNode::dfs1(int cfa) {
     }
   }
   if(num == chainfa) {
-    bt1 = new BitTree1(&cspace[ct-1], chainsz);
-    bt2 = new BitTree2(&cspace[ct-1], &sumspace[sumt-1], chainsz);
+    bt1 = new BitTree1(&cspace[ct-1]);
+    bt2 = new BitTree2(&cspace[ct-1], &sumspace[sumt-1]);
     ct+=chainsz;
     sumt+=chainsz;
   }
@@ -224,8 +246,8 @@ void TreeNode::add(int f,int vv) {
 }
 
 int TreeNode::last[maxn];
-int TreeNode::cspace[maxn];
-int TreeNode::sumspace[maxn];
+LD TreeNode::cspace[maxn];
+LD TreeNode::sumspace[maxn];
 int TreeNode::t, TreeNode::ct=1, TreeNode::sumt=1;
 int D[maxn];
 
@@ -248,19 +270,36 @@ void addWeight(int a, int w) {
 }
 
 void addDegree(int a) {
-  nodes[a].d++;
   int cfa = nodes[a].chainfa;
+  int oldfav = nodes[cfa].getPower(), newfav;
+  nodes[cfa].bt2->modifyd(nodes[a].chainpos(), nodes[a].d+1, nodes[a].d);
+  nodes[cfa].bt1->modify(nodes[a].chainpos(), nodes[a].d+1, nodes[a].d);
+  nodes[a].d++;
+  newfav = nodes[cfa].getPower();
+  newfav -= oldfav;
+  if(newfav < 0) newfav += div;
+  if(nodes[cfa].fa) {
+    addWeight(nodes[cfa].fa, newfav);
+  }
 }
 
-void addNode(int a) {
+void addNode(int a, int v) {
   nodes[a].d=1;
-
+  int cfa = nodes[a].chainfa;
+  if(nodes[a].fa) {
+    addDegree(nodes[a].fa);
+  }
+  nodes[cfa].bt1->append(1);
+  nodes[cfa].bt2->append(0);
+  addWeight(a, v);
 }
 
 int main() {
   int v,i,a,b,c;
+//  freopen("a.txt", "r", stdin);
   scanf("%d %d",&v, &qn);
   nodes[1].v0=v;
+  nodes[1].num=1;
   TreeNode::t=1;
   for(i=1;i<=qn;i++) {
     scanf("%d", &a);
@@ -278,6 +317,15 @@ int main() {
   for(i=TreeNode::t;i;i--) {
     nodes[i].sz++;
     nodes[nodes[i].fa].sz += nodes[i].sz;
+  }
+  nodes[1].dfs1(-1);
+  addNode(1, nodes[1].v0);
+  for(i=1;i<=qn;i++) {
+    if(qry[i][0]==1) {
+      addNode(qry[i][1], nodes[qry[i][1]].v0);
+    } else {
+      printf("%d\n", nodes[qry[i][1]].getPower());
+    }
   }
   return 0;
 }
