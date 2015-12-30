@@ -152,7 +152,7 @@ struct RMQ {
 
 }rmq;
 int RMQ::q[maxn][30];
-int RMQ::nbits[maxn];
+int RMQ::nbits[maxn+1];
 
 bool same(int i,int j,int len) {
   if(i==j)
