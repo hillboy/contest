@@ -1,13 +1,17 @@
 #include<stdio.h>
 #include<algorithm>
+#include<map>
+#include<set>
 using namespace std;
-#define maxn 101000
+#define maxn 201000
 
 int i,j,n,m;
+
 
 struct Tree {
   int ind[maxn];
   int e[maxn*2], lasti[maxn*2], t;
+  int di[maxn];
   int que1[maxn*2], qt1;
 
 
@@ -26,6 +30,7 @@ struct Tree {
     bool leaf = true;
     qt1++;
     que1[qt1]=a;
+    di[a]=di[last]+1;
     for(i=ind[a]; i; i=lasti[i]) {
       if(e[i] != last) {
         leaf = false;
@@ -64,7 +69,10 @@ struct Tree {
     }
     while(gap<qt2) {
       for(i=1;i<=qt2;i++) {
-        rmq[i][j] = min(rmq[i][j-1], rmq[i+gap][j-1]);
+        if(i+gap<=qt2)
+          rmq[i][j] = min(rmq[i][j-1], rmq[i+gap][j-1]);
+        else 
+          rmq[i][j]=rmq[i][j-1];
       }
       j++;
       gap+=gap;
@@ -104,6 +112,126 @@ void test1() {
   }
 }
 
+int query[maxn], k;
+
+map<int, int> q;
+
+struct HP {
+  int lca;
+  int pos1, pos2;
+} hp[maxn*2];
+
+bool cmp(HP& a, HP& b) {
+  return tree.di[a.lca] < tree.di[b.lca];
+}
+
+int hpt;
+
+set<int> removed;
+
+void rm(int pos) {
+  map<int,int>::iterator ii,left,right;
+  ii=q.find(pos);
+  if(ii==q.begin()) {
+    q.erase(ii);
+    return;
+  }
+  left=ii;
+  left--;
+  right = ii;
+  right ++;
+  if(right==q.end()) {
+    q.erase(ii);
+    return;
+  }
+  hp[hpt].pos1 = left->first;
+  hp[hpt].pos2=right->first;
+  hp[hpt].lca = tree.lca(left->second, right->second);
+  hpt++;
+  push_heap(hp, hp+hpt, cmp);
+  q.erase(ii);
+}
+
+void make() {
+  removed.clear();
+  hpt=0;
+  map<int,int>::iterator ii,jj;
+  jj=ii=q.begin();
+  ii++;
+  while(ii!=q.end()) {
+    hp[hpt].pos1 = ii->first;
+    hp[hpt].pos2=jj->first;
+    hp[hpt].lca = tree.lca(ii->second, jj->second);
+    hpt++;
+    push_heap(hp, hp+hpt, cmp);
+    jj=ii;
+    ii++;
+  }
+  int ans = 0;
+  int pos1, pos2;
+  map<int,int>::iterator i1, i2;
+  while(q.size() > 1) {
+    i1=q.find(hp[0].pos1);
+    i2=q.find(hp[0].pos2);
+    if( i1== q.end() && i2 == q.end() ) {
+      pop_heap(hp, hp+hpt,cmp);
+      hpt--;
+
+      continue;
+    }
+    if(i1== q.end()) {
+      int lca = hp[0].lca;
+      pop_heap(hp, hp+hpt,cmp);
+      hpt--;
+      if(removed.find(lca) != removed.end()) {
+        rm(i2->first);
+      }
+      continue;
+    }
+    if(i2== q.end()) {
+      int lca = hp[0].lca;
+      pop_heap(hp, hp+hpt,cmp);
+      hpt--;
+      if(removed.find(lca) != removed.end()) {
+        rm(i1->first);
+      }
+      continue;
+    }
+    int lca = hp[0].lca;
+    pos1=hp[0].pos1;
+    pos2=hp[0].pos2;
+    pop_heap(hp, hp+hpt, cmp);
+    hpt--;
+    if(q.find(tree.pos2[lca]) != q.end()) {
+      if(tree.di[i1->second] - tree.di[lca] ==1 ||
+          tree.di[i2->second] - tree.di[lca] ==1) {
+        printf("-1\n");
+        return;
+      }
+      if(i1->second != lca && i2->second !=lca) {
+        rm(pos1);
+        rm(pos2);
+        ans+=2;
+      } else {
+        if(i1->second == lca) {
+          rm(pos2);
+        } else {
+          rm(pos1);
+        }
+        ans++;
+      }
+    } else {
+      if(removed.find(lca) == removed.end()) {
+        ans++;
+        removed.insert(lca);
+      }
+      rm(pos1);
+      rm(pos2);
+    }
+  }
+  printf("%d\n", ans);
+}
+
 int main() {
   scanf("%d", &n);
   int a,b;
@@ -115,6 +243,20 @@ int main() {
   tree.dfs1(1,0);
   tree.dfs2(1,0);
   tree.rmq_init();
-  test1();
+
+  scanf("%d", &a);
+  while(a--) {
+    scanf("%d", &b);
+    q.clear();
+    for(i=0;i<b;i++) {
+      scanf("%d", &j);
+      q[tree.pos2[j]]=j;
+    }
+    if(q.size() == 1) {
+      printf("0\n");
+      continue;
+    }
+    make();
+  }
   return 0;
 }
