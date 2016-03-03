@@ -13,6 +13,7 @@ int jump[maxn];
 int i,j,n,m;
 
 // indexed 1
+// KMP kmp
 template<typename T>
 void build_jump(T s[maxn], int jump[maxn], int n) {
   jump[1]=2;
