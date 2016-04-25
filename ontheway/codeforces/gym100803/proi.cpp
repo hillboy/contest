@@ -5,7 +5,7 @@ using namespace std;
 #define maxn 153
 typedef long long int LD;
 
-#define maxint 1000000000LL
+#define maxint (1000000000LL * 1000000000LL / 150)
 
 LD p[maxn][maxn];
 
@@ -54,18 +54,18 @@ void make(int b, int c) {
         j=p[b+1][i];
     }
   }
-  
+
 
   if(ok)
     if(!cando[b][c]) {
       cando[b][c]=1;
-      p[b][c]=-j - q[b];
+      p[b][c]=-j - q[b]+1;
     }
 
   // not eat
   for(i=0;i<=sum[1];i++) {
     if(cando[b+1][i] && i >=c) {
-      j=p[b+1][i]+1-q[b];
+      j=p[b+1][i]+1+q[b];
       if(j<=0)
         j=1;
       if(!cando[b][c]) {
@@ -78,6 +78,8 @@ void make(int b, int c) {
       }
     }
   }
+  if(p[b][c] > maxint)
+    cando[b][c]=false;
 }
 
 int main() {
