@@ -1,0 +1,549 @@
+#include <vector>
+#include <list>
+#include <map>
+#include <set>
+#include <queue>
+#include <deque>
+#include <stack>
+#include <bitset>
+#include <algorithm>
+#include <functional>
+#include <numeric>
+#include <utility>
+#include <sstream>
+#include <iostream>
+#include <iomanip>
+#include <cstdio>
+#include <cmath>
+#include <cstdlib>
+#include <ctime>
+#include<string.h>
+
+
+#define For(i,s,t) for(int i=(s); i<(t); i++)
+#define fori(n) For(i,0,n)
+#define forj(n) For(j,0,n)
+#define fork(n) For(k,0,n)
+#define clr(x) memset(x,0,sizeof(x))
+#define clr2(x) memset(x,-1,sizeof(x))
+
+typedef int T; const int maxV=900;
+
+#define maxn 900
+
+using namespace std;
+
+#define ForAdj(i,j) 	for(int _t=0, j; j=G[i][_t], _t<D[i]; _t++)
+#define AddFlow(i,j,f) 	R[i][j]-=f, R[j][i]+=f, E[i]-=f, E[j]+=f
+#define AddL(x) 		L[H[x]][LN[H[x]]++]=x
+#define Active(a) 		P[a]=0, AddL(a)
+#define SetH(a,h) 		HN[H[a]]--, HN[h]++, H[a]=h
+int H[maxV], HN[maxV];
+T E[maxV];
+T R[maxV][maxV];
+T C[maxV][maxV];
+int L[maxV*2][maxV], LN[maxV*2]; // L,与G都可优化至M[O(E)]
+int G[maxV][maxV], D[maxV], P[maxV];
+//构图
+int n, soure, sink; // INIT THESES !!
+void init() { clr(D); fori(n) forj(n) R[i][j]=0; }
+void adde(int a,int b,int w) { if(a!=b) R[a][b]+=w; C[a][b]+=w;}
+void build() {
+  fori(n) forj(i) if(R[i][j]>0||R[j][i]>0){
+    G[i][D[i]++]=j, G[j][D[j]++]=i;
+  }
+}
+int check(int a) {
+  int chg=0, ha=H[a];
+  while(E[a]>0) {
+    if(P[a]==D[a]) { // relabel
+      int minh=2*n;
+      ForAdj(a,b) if(R[a][b]>0) {minh=(minh<H[b]?minh:H[b]);}
+      SetH(a,minh+1); P[a]=0;
+    } else {
+      int b=G[a][P[a]];
+      if(R[a][b]>0 && H[a]==H[b]+1) { // push
+        T x=min(E[a],R[a][b]);
+        if(E[b]==0 && b!=sink && b!=soure) {
+          chg=chg || H[b]>ha;
+          Active(b);
+        }
+        AddFlow(a,b,x);
+      } else P[a]++;
+    }
+  }
+  return chg;
+}
+int pre() { // return if s->t connected
+  int Q[maxV], qh=0, qt=0;
+  fori(n) H[i]=n;
+  Q[qt++]=sink, H[sink]=0;
+  while(qh<qt) {
+    int i=Q[qh++];
+    ForAdj(i,j) if(H[j]==n) Q[qt++]=j, H[j]=H[i]+1;
+  }
+  if(H[soure]==n) return 0;
+  clr(E), clr(LN), clr(HN), clr(P);
+  H[soure]=n;
+  fori(n) if(i!=soure) HN[H[i]]++;
+
+  ForAdj(soure,i) {
+    T x=R[soure][i];  // CARE: AddFlow is a MACRO
+    if(x>0) {
+      AddFlow(soure,i,x);
+      if(i!=sink) Active(i);
+    }
+  }
+  return 1;
+}
+void update(int h) {
+  for(int i=h+1; i<=n; i++) LN[i]=0;
+  fori(n) if(i!=soure && H[i]>h && H[i]<=n) {
+    SetH(i,n+1);
+    if(E[i]>0) Active(i);
+  }
+}
+T preflow() {
+  if(!pre()) return 0;
+  for(int h=n; h>0; h--) while(LN[h]) {
+    int i=L[h][--LN[h]], t=h;
+    if(check(i)) {
+      h=H[i];
+      if(HN[t]==0) update(t), h=(h>n+2?h:n+2);
+      break;
+    }
+  }
+  return E[sink];
+}
+
+int i,j,m;
+
+
+vector<int> qr[maxn], qc[maxn];
+
+int an[100];
+
+bool checked[1000];
+
+bool fre[100][100];
+
+class BearGridRect {
+ public:
+  vector <int> findPermutation(int N, vector <int> r1, vector <int> r2, vector <int> c1, vector <int> c2, vector <int> cnt) {
+    clr(fre);
+    m=r1.size();
+    n=N+m+2;
+    soure=0;
+    sink = n-1;
+    init();
+    vector<int> ans;
+    int sum = 0;
+    fori(m) {
+      qr[i].clear();
+      qc[i].clear();
+      sum+=cnt[i];
+      for(j=r1[i];j<=r2[i];j++) {
+        for(int r=c1[i];r<=c2[i];r++) {
+          fre[j][r]=true;
+        }
+      }
+    }
+    fori(m) {
+      adde(soure, i+1, cnt[i]);
+      for(j=r1[i];j<=r2[i];j++) {
+        adde(i+1, m+j+1, 1);
+      }
+    }
+    fori(N) {
+      adde(m+i+1, sink,1);
+    }
+    build();
+    if(preflow()!=sum) {
+      ans.push_back(-1);
+      return ans;
+    }
+    fori(m) {
+      adde(soure, i+1, cnt[i]);
+      for(j=r1[i];j<=r2[i];j++) {
+        if(R[i+1][m+j+1]==0) {
+          qr[i].push_back(j);
+        }
+      }
+    }
+
+    init();
+    fori(m) {
+      adde(soure, i+1, cnt[i]);
+      for(j=c1[i];j<=c2[i];j++) {
+        adde(i+1, m+j+1, 1);
+      }
+    }
+    fori(N) {
+      adde(m+i+1, sink,1);
+    }
+    build();
+    if(preflow()!=sum) {
+      ans.push_back(-1);
+      return ans;
+    }
+    fori(m) {
+      adde(soure, i+1, cnt[i]);
+      for(j=c1[i];j<=c2[i];j++) {
+        if(R[i+1][m+j+1]==0) {
+          qc[i].push_back(j);
+        }
+      }
+    }
+
+    memset(checked,0,sizeof(checked));
+    memset(an,0,sizeof(an));
+    fori(m) {
+      for(j=0;j<(int)qr[i].size();j++) {
+        an[qr[i][j]] = qc[i][j]+1;
+        checked[qc[i][j]]=1;
+      }
+    }
+    n=2+N+N;
+    sink=n-1;
+    sum=0;
+    init();
+    fori(N) {
+      if(an[i]==0) {
+        sum++;
+        adde(0, i+1,1);
+        forj(N) {
+          if(!checked[j] && !fre[i][j]) {
+            adde(i+1, j+1+N,1);
+          }
+        }
+      }
+      adde(i+1+N, sink,1);
+    }
+    build();
+    if(preflow()!=sum) {
+      ans.push_back(-1);
+      return ans;
+    }
+    fori(N) {
+      if(an[i]==0) {
+        forj(N) {
+          if(!checked[j] && R[i+1][j+1+N] ==0 && !fre[i][j]) {
+            an[i]=j+1;
+          }
+        }
+      }
+    }
+    fori(N) {
+      ans.push_back(an[i]-1);
+    }
+    return ans;
+  }
+};
+
+
+// BEGIN KAWIGIEDIT TESTING
+// Generated by KawigiEdit 2.1.4 (beta) modified by pivanof
+bool KawigiEdit_RunTest(int testNum, int p0, vector <int> p1, vector <int> p2, vector <int> p3, vector <int> p4, vector <int> p5, bool hasAnswer, vector <int> p6) {
+  cout << "Test " << testNum << ": [" << p0 << "," << "{";
+  for (int i = 0; int(p1.size()) > i; ++i) {
+    if (i > 0) {
+      cout << ",";
+    }
+    cout << p1[i];
+  }
+  cout << "}" << "," << "{";
+  for (int i = 0; int(p2.size()) > i; ++i) {
+    if (i > 0) {
+      cout << ",";
+    }
+    cout << p2[i];
+  }
+  cout << "}" << "," << "{";
+  for (int i = 0; int(p3.size()) > i; ++i) {
+    if (i > 0) {
+      cout << ",";
+    }
+    cout << p3[i];
+  }
+  cout << "}" << "," << "{";
+  for (int i = 0; int(p4.size()) > i; ++i) {
+    if (i > 0) {
+      cout << ",";
+    }
+    cout << p4[i];
+  }
+  cout << "}" << "," << "{";
+  for (int i = 0; int(p5.size()) > i; ++i) {
+    if (i > 0) {
+      cout << ",";
+    }
+    cout << p5[i];
+  }
+  cout << "}";
+  cout << "]" << endl;
+  BearGridRect *obj;
+  vector <int> answer;
+  obj = new BearGridRect();
+  clock_t startTime = clock();
+  answer = obj->findPermutation(p0, p1, p2, p3, p4, p5);
+  clock_t endTime = clock();
+  delete obj;
+  bool res;
+  res = true;
+  cout << "Time: " << double(endTime - startTime) / CLOCKS_PER_SEC << " seconds" << endl;
+  if (hasAnswer) {
+    cout << "Desired answer:" << endl;
+    cout << "\t" << "{";
+    for (int i = 0; int(p6.size()) > i; ++i) {
+      if (i > 0) {
+        cout << ",";
+      }
+      cout << p6[i];
+    }
+    cout << "}" << endl;
+  }
+  cout << "Your answer:" << endl;
+  cout << "\t" << "{";
+  for (int i = 0; int(answer.size()) > i; ++i) {
+    if (i > 0) {
+      cout << ",";
+    }
+    cout << answer[i];
+  }
+  cout << "}" << endl;
+  if (hasAnswer) {
+    if (answer.size() != p6.size()) {
+      res = false;
+    } else {
+      for (int i = 0; int(answer.size()) > i; ++i) {
+        if (answer[i] != p6[i]) {
+          res = false;
+        }
+      }
+    }
+  }
+  if (!res) {
+    cout << "DOESN'T MATCH!!!!" << endl;
+  } else if (double(endTime - startTime) / CLOCKS_PER_SEC >= 2) {
+    cout << "FAIL the timeout" << endl;
+    res = false;
+  } else if (hasAnswer) {
+    cout << "Match :-)" << endl;
+  } else {
+    cout << "OK, but is it right?" << endl;
+  }
+  cout << "" << endl;
+  return res;
+}
+int main() {
+  bool all_right;
+  all_right = true;
+
+  int p0;
+  vector <int> p1;
+  vector <int> p2;
+  vector <int> p3;
+  vector <int> p4;
+  vector <int> p5;
+  vector <int> p6;
+  {
+    // ----- test 2 -----
+    p0 = 3;
+    int t1[] = {0};
+    p1.assign(t1, t1 + sizeof(t1) / sizeof(t1[0]));
+    int t2[] = {2};
+    p2.assign(t2, t2 + sizeof(t2) / sizeof(t2[0]));
+    int t3[] = {0};
+    p3.assign(t3, t3 + sizeof(t3) / sizeof(t3[0]));
+    int t4[] = {2};
+    p4.assign(t4, t4 + sizeof(t4) / sizeof(t4[0]));
+    int t5[] = {0};
+    p5.assign(t5, t5 + sizeof(t5) / sizeof(t5[0]));
+    int t6[] = {-1};
+    p6.assign(t6, t6 + sizeof(t6) / sizeof(t6[0]));
+    all_right = KawigiEdit_RunTest(2, p0, p1, p2, p3, p4, p5, true, p6) && all_right;
+    // ------------------
+  }
+
+  return 0;
+
+  {
+    // ----- test 0 -----
+    p0 = 5;
+    int t1[] = {4,0};
+    p1.assign(t1, t1 + sizeof(t1) / sizeof(t1[0]));
+    int t2[] = {4,1};
+    p2.assign(t2, t2 + sizeof(t2) / sizeof(t2[0]));
+    int t3[] = {2,1};
+    p3.assign(t3, t3 + sizeof(t3) / sizeof(t3[0]));
+    int t4[] = {4,2};
+    p4.assign(t4, t4 + sizeof(t4) / sizeof(t4[0]));
+    int t5[] = {0,2};
+    p5.assign(t5, t5 + sizeof(t5) / sizeof(t5[0]));
+    int t6[] = {1,2,4,3,0};
+    p6.assign(t6, t6 + sizeof(t6) / sizeof(t6[0]));
+    all_right = KawigiEdit_RunTest(0, p0, p1, p2, p3, p4, p5, true, p6) && all_right;
+    // ------------------
+  }
+
+  {
+    // ----- test 1 -----
+    p0 = 5;
+    int t1[] = {4,0,2};
+    p1.assign(t1, t1 + sizeof(t1) / sizeof(t1[0]));
+    int t2[] = {4,1,2};
+    p2.assign(t2, t2 + sizeof(t2) / sizeof(t2[0]));
+    int t3[] = {2,1,2};
+    p3.assign(t3, t3 + sizeof(t3) / sizeof(t3[0]));
+    int t4[] = {4,2,2};
+    p4.assign(t4, t4 + sizeof(t4) / sizeof(t4[0]));
+    int t5[] = {0,2,1};
+    p5.assign(t5, t5 + sizeof(t5) / sizeof(t5[0]));
+    int t6[] = {-1};
+    p6.assign(t6, t6 + sizeof(t6) / sizeof(t6[0]));
+    all_right = KawigiEdit_RunTest(1, p0, p1, p2, p3, p4, p5, true, p6) && all_right;
+    // ------------------
+  }
+
+  {
+    // ----- test 2 -----
+    p0 = 3;
+    int t1[] = {0};
+    p1.assign(t1, t1 + sizeof(t1) / sizeof(t1[0]));
+    int t2[] = {2};
+    p2.assign(t2, t2 + sizeof(t2) / sizeof(t2[0]));
+    int t3[] = {0};
+    p3.assign(t3, t3 + sizeof(t3) / sizeof(t3[0]));
+    int t4[] = {2};
+    p4.assign(t4, t4 + sizeof(t4) / sizeof(t4[0]));
+    int t5[] = {0};
+    p5.assign(t5, t5 + sizeof(t5) / sizeof(t5[0]));
+    int t6[] = {-1};
+    p6.assign(t6, t6 + sizeof(t6) / sizeof(t6[0]));
+    all_right = KawigiEdit_RunTest(2, p0, p1, p2, p3, p4, p5, true, p6) && all_right;
+    // ------------------
+  }
+
+  {
+    // ----- test 3 -----
+    p0 = 4;
+    int t1[] = {0};
+    p1.assign(t1, t1 + sizeof(t1) / sizeof(t1[0]));
+    int t2[] = {0};
+    p2.assign(t2, t2 + sizeof(t2) / sizeof(t2[0]));
+    int t3[] = {0};
+    p3.assign(t3, t3 + sizeof(t3) / sizeof(t3[0]));
+    int t4[] = {0};
+    p4.assign(t4, t4 + sizeof(t4) / sizeof(t4[0]));
+    int t5[] = {0};
+    p5.assign(t5, t5 + sizeof(t5) / sizeof(t5[0]));
+    int t6[] = {1,0,2,3};
+    p6.assign(t6, t6 + sizeof(t6) / sizeof(t6[0]));
+    all_right = KawigiEdit_RunTest(3, p0, p1, p2, p3, p4, p5, true, p6) && all_right;
+    // ------------------
+  }
+
+  {
+    // ----- test 4 -----
+    p0 = 2;
+    int t1[] = {0,0,1,1};
+    p1.assign(t1, t1 + sizeof(t1) / sizeof(t1[0]));
+    int t2[] = {0,0,1,1};
+    p2.assign(t2, t2 + sizeof(t2) / sizeof(t2[0]));
+    int t3[] = {0,1,0,1};
+    p3.assign(t3, t3 + sizeof(t3) / sizeof(t3[0]));
+    int t4[] = {0,1,0,1};
+    p4.assign(t4, t4 + sizeof(t4) / sizeof(t4[0]));
+    int t5[] = {0,1,1,0};
+    p5.assign(t5, t5 + sizeof(t5) / sizeof(t5[0]));
+    int t6[] = {1,0};
+    p6.assign(t6, t6 + sizeof(t6) / sizeof(t6[0]));
+    all_right = KawigiEdit_RunTest(4, p0, p1, p2, p3, p4, p5, true, p6) && all_right;
+    // ------------------
+  }
+
+  {
+    // ----- test 5 -----
+    p0 = 2;
+    int t1[] = {0,0,1,1};
+    p1.assign(t1, t1 + sizeof(t1) / sizeof(t1[0]));
+    int t2[] = {0,0,1,1};
+    p2.assign(t2, t2 + sizeof(t2) / sizeof(t2[0]));
+    int t3[] = {0,1,0,1};
+    p3.assign(t3, t3 + sizeof(t3) / sizeof(t3[0]));
+    int t4[] = {0,1,0,1};
+    p4.assign(t4, t4 + sizeof(t4) / sizeof(t4[0]));
+    int t5[] = {0,1,0,1};
+    p5.assign(t5, t5 + sizeof(t5) / sizeof(t5[0]));
+    int t6[] = {-1};
+    p6.assign(t6, t6 + sizeof(t6) / sizeof(t6[0]));
+    all_right = KawigiEdit_RunTest(5, p0, p1, p2, p3, p4, p5, true, p6) && all_right;
+    // ------------------
+  }
+
+  {
+    // ----- test 6 -----
+    p0 = 2;
+    int t1[] = {0,0,1,1};
+    p1.assign(t1, t1 + sizeof(t1) / sizeof(t1[0]));
+    int t2[] = {0,0,1,1};
+    p2.assign(t2, t2 + sizeof(t2) / sizeof(t2[0]));
+    int t3[] = {0,1,0,1};
+    p3.assign(t3, t3 + sizeof(t3) / sizeof(t3[0]));
+    int t4[] = {0,1,0,1};
+    p4.assign(t4, t4 + sizeof(t4) / sizeof(t4[0]));
+    int t5[] = {1,1,1,1};
+    p5.assign(t5, t5 + sizeof(t5) / sizeof(t5[0]));
+    int t6[] = {-1};
+    p6.assign(t6, t6 + sizeof(t6) / sizeof(t6[0]));
+    all_right = KawigiEdit_RunTest(6, p0, p1, p2, p3, p4, p5, true, p6) && all_right;
+    // ------------------
+  }
+
+  {
+    // ----- test 7 -----
+    p0 = 6;
+    int t1[] = {0,0,4};
+    p1.assign(t1, t1 + sizeof(t1) / sizeof(t1[0]));
+    int t2[] = {2,3,5};
+    p2.assign(t2, t2 + sizeof(t2) / sizeof(t2[0]));
+    int t3[] = {0,5,1};
+    p3.assign(t3, t3 + sizeof(t3) / sizeof(t3[0]));
+    int t4[] = {4,5,5};
+    p4.assign(t4, t4 + sizeof(t4) / sizeof(t4[0]));
+    int t5[] = {3,1,1};
+    p5.assign(t5, t5 + sizeof(t5) / sizeof(t5[0]));
+    int t6[] = {1,2,4,5,3,0};
+    p6.assign(t6, t6 + sizeof(t6) / sizeof(t6[0]));
+    all_right = KawigiEdit_RunTest(7, p0, p1, p2, p3, p4, p5, true, p6) && all_right;
+    // ------------------
+  }
+
+  {
+    // ----- test 8 -----
+    p0 = 3;
+    int t1[] = {0};
+    p1.assign(t1, t1 + sizeof(t1) / sizeof(t1[0]));
+    int t2[] = {0};
+    p2.assign(t2, t2 + sizeof(t2) / sizeof(t2[0]));
+    int t3[] = {0};
+    p3.assign(t3, t3 + sizeof(t3) / sizeof(t3[0]));
+    int t4[] = {0};
+    p4.assign(t4, t4 + sizeof(t4) / sizeof(t4[0]));
+    int t5[] = {2};
+    p5.assign(t5, t5 + sizeof(t5) / sizeof(t5[0]));
+    int t6[] = {-1};
+    p6.assign(t6, t6 + sizeof(t6) / sizeof(t6[0]));
+    all_right = KawigiEdit_RunTest(8, p0, p1, p2, p3, p4, p5, true, p6) && all_right;
+    // ------------------
+  }
+
+  if (all_right) {
+    cout << "You're a stud (at least on the example cases)!" << endl;
+  } else {
+    cout << "Some of the test cases had errors." << endl;
+  }
+  return 0;
+}
+// END KAWIGIEDIT TESTING
+//Powered by KawigiEdit 2.1.4 (beta) modified by pivanof!
