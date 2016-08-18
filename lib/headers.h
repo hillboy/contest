@@ -22,4 +22,6 @@ using namespace std;
 #define X(x) (x).first
 #define Y(x) (x).second
 
+#define mymemset(x, val) memset(x, val, sizeof(x))
+
 //  ios_base::sync_with_stdio(false);
