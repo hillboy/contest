@@ -23,5 +23,8 @@ using namespace std;
 #define Y(x) (x).second
 
 #define mymemset(x, val) memset(x, val, sizeof(x))
+#define sz(x) ((int)x.size())
+
+typedef long long int LD;
 
 //  ios_base::sync_with_stdio(false);
