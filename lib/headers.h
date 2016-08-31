@@ -7,6 +7,7 @@
 #include <map>
 #include <string>
 #include <math.h>
+#include <stdlib.h>
 using namespace std;
 
 #define forlr(i,l,r) for(i=l;i<r;i++)

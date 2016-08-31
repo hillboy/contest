@@ -24,6 +24,7 @@ using namespace std;
 
 #define mymemset(x, val) memset(x, val, sizeof(x))
 #define sz(x) ((int)x.size())
+#define myabs(x) ((x) < 0? -(x) : (x))
 
 
 typedef long long int LD;
@@ -34,10 +35,6 @@ typedef long long int LD;
 int i,j,n,m;
 
 int visited[maxn];
-
-LD myabs(LD a) {
-  return a<0?-a:a;
-}
 
 vector<pair<int, int> > edges[maxn];
 

@@ -24,24 +24,10 @@ def main()  :
 
   # a!
   def count2(a):
-    l = 2
-    now = 2
     ans = 0
     while a > 0 :
-      if a % 2 == 1:
-        a -= 1
-        continue
-
-      l = 2
-      now = 1
-
-      while l*2 <= a:
-        l *= 2
-        now = now*2 +1
-
-      ans += now
-      a -= l
-
+        a /= 2
+        ans += a
     return ans
 
   A = 1
