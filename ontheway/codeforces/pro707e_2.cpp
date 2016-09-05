@@ -44,7 +44,7 @@ pair<int, int> start[maxn];
 
 bool off[maxn];
 
-pair<int, int> que[maxn*maxn];
+pair<int, int> que[maxn*10];
 
 int t;
 
@@ -60,13 +60,17 @@ bool cmp(const pair<int, int>& a, const pair<int, int>& b ) {
 
 bool seen[maxn];
 
-LD make(int x, int y) {
-  if (x<1 || y < 1)
-    return 0;
+int xl,xr, yl,yr;
+
+inline bool check_in(int a, int b) {
+  return a>=xl && a<=xr && b >= yl && b<=yr;
+}
+
+LD make() {
   t = 0;
   LD ans = 0;
   int i;
-  if (x == n && y == m) {
+  if (xr == n && yr == m && xl == 1 && yl ==1) {
     for1tr(i, k) {
       if(!off[i]) {
         ans += allsum[i];
@@ -74,16 +78,28 @@ LD make(int x, int y) {
     }
     return ans;
   }
-  if (x<n) {
-    for1tr(i, y) {
-      que[t++] = make_pair(x, i);
-      que[t++] = make_pair(x+1, i);
+  if (xr<n) {
+    forltr(i, yl, yr) {
+      que[t++] = make_pair(xr, i);
+      que[t++] = make_pair(xr+1, i);
     }
   }
-  if (y<m) {
-    for1tr(i, x) {
-      que[t++] = make_pair(i, y);
-      que[t++] = make_pair(i, y+1);
+  if (yr<m) {
+    forltr(i, xl, xr) {
+      que[t++] = make_pair(i, yr);
+      que[t++] = make_pair(i, yr+1);
+    }
+  }
+  if(xl>1) {
+    forltr(i, yl, yr) {
+      que[t++] = make_pair(xl, i);
+      que[t++] = make_pair(xl-1, i);
+    }
+  }
+  if(yl>1) {
+    forltr(i, xl, xr) {
+      que[t++] = make_pair(i, yl);
+      que[t++] = make_pair(i, yl-1);
     }
   }
   sort(que, que+t, cmp);
@@ -101,7 +117,7 @@ LD make(int x, int y) {
     point* last = &p[X(start[tpe])][Y(start[tpe])];
     point* now = &p[X(que[i])][Y(que[i])];
     bool inside = false;
-    if (X(start[tpe]) <= x && Y(start[tpe]) <= y) {
+    if(check_in(X(start[tpe]), Y(start[tpe]))) {
       inside = true;
       ans += last->v;
     }
@@ -110,7 +126,7 @@ LD make(int x, int y) {
       if(now->a != tpe) {
         break;
       }
-      if (X(que[i]) <= x && Y(que[i]) <= y) {
+      if (check_in(X(que[i]) , Y(que[i]))) {
         if (inside) {
           ans += now->sum - last->sum;
         } else {
@@ -129,7 +145,7 @@ LD make(int x, int y) {
   }
   for1tr(i, k) {
     if(!seen[i] && !off[i]) {
-      if (X(start[i]) <= x && Y(start[i]) <= y) {
+      if(check_in(X(start[i]), Y(start[i]))) {
         ans += allsum[i];
       }
     }
@@ -166,13 +182,9 @@ int main() {
   while(v--) {
     scanf(" %s", buffer);
     if(buffer[0] == 'A') {
-      scanf("%d %d %d %d", &a, &b, &c, &d);
-      s1 = make(a-1,b-1);
-      s2 = make(a-1,d);
-      s3 = make(c, b-1);
-      s4 = make(c,d);
-      // printf("%lld %lld %lld %lld\n", s1, s2, s3, s4);
-      printf("%lld\n", s1+s4-s2-s3);
+      scanf("%d %d %d %d", &xl, &yl, &xr, &yr);
+      s1 = make();
+      printf("%lld\n", s1);
     } else {
       scanf("%d", &a);
       off[a] = !off[a];

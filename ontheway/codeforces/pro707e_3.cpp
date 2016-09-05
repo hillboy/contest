@@ -34,17 +34,18 @@ typedef long long int LD;
 struct point {
   int a,b,v;
   LD sum, presum;
+  pair<int, int> next;
 }p[maxn][maxn];
 
 int i,j,n,m,k;
 
 int q[maxn];
 
-pair<int, int> start[maxn];
+pair<int, int> start[maxn], ed[maxn];
 
 bool off[maxn];
 
-pair<int, int> que[maxn*maxn];
+pair<int, int> que[maxn*10];
 
 int t;
 
@@ -60,13 +61,21 @@ bool cmp(const pair<int, int>& a, const pair<int, int>& b ) {
 
 bool seen[maxn];
 
-LD make(int x, int y) {
-  if (x<1 || y < 1)
-    return 0;
+int xl,xr, yl,yr;
+
+inline bool check_in(int a, int b) {
+  return a>=xl && a<=xr && b >= yl && b<=yr;
+}
+
+inline bool check_in(pair<int,int>& a) {
+  return check_in(X(a), Y(a));
+}
+
+LD make() {
   t = 0;
   LD ans = 0;
   int i;
-  if (x == n && y == m) {
+  if (xr == n && yr == m && xl == 1 && yl ==1) {
     for1tr(i, k) {
       if(!off[i]) {
         ans += allsum[i];
@@ -74,16 +83,24 @@ LD make(int x, int y) {
     }
     return ans;
   }
-  if (x<n) {
-    for1tr(i, y) {
-      que[t++] = make_pair(x, i);
-      que[t++] = make_pair(x+1, i);
+  if (xr<n) {
+    forltr(i, yl, yr) {
+      que[t++] = make_pair(xr, i);
     }
   }
-  if (y<m) {
-    for1tr(i, x) {
-      que[t++] = make_pair(i, y);
-      que[t++] = make_pair(i, y+1);
+  if (yr<m) {
+    forltr(i, xl, xr) {
+      que[t++] = make_pair(i, yr);
+    }
+  }
+  if(xl>1 && (xl != xr || xr ==n)) {
+    forltr(i, yl, yr) {
+      que[t++] = make_pair(xl, i);
+    }
+  }
+  if(yl>1 && (yl != yr || yr ==m)) {
+    forltr(i, xl, xr) {
+      que[t++] = make_pair(i, yl);
     }
   }
   sort(que, que+t, cmp);
@@ -101,8 +118,8 @@ LD make(int x, int y) {
     point* last = &p[X(start[tpe])][Y(start[tpe])];
     point* now = &p[X(que[i])][Y(que[i])];
     bool inside = false;
-    if (X(start[tpe]) <= x && Y(start[tpe]) <= y) {
-      inside = true;
+    if(check_in(start[tpe])) {
+      inside = check_in(last->next);
       ans += last->v;
     }
     while(i<t) {
@@ -110,26 +127,30 @@ LD make(int x, int y) {
       if(now->a != tpe) {
         break;
       }
-      if (X(que[i]) <= x && Y(que[i]) <= y) {
-        if (inside) {
-          ans += now->sum - last->sum;
-        } else {
-          ans += now->v;
-        }
-        inside = true;
-      } else {
-        inside = false;
+      if(now == last) {
+        i++;
+        continue;
       }
+
+      if (inside) {
+        ans += now->sum - last->sum;
+      } else {
+        ans += now->v;
+      }
+      inside = check_in(now->next);
       last = now;
       i++;
     }
     if (inside) {
-      ans += allsum[tpe] - last->sum;
+      if (check_in(ed[tpe])) {
+        ans += allsum[tpe] - last->sum;
+      } else {
+      }
     }
   }
   for1tr(i, k) {
     if(!seen[i] && !off[i]) {
-      if (X(start[i]) <= x && Y(start[i]) <= y) {
+      if(check_in(start[i])) {
         ans += allsum[i];
       }
     }
@@ -145,6 +166,7 @@ int main() {
   int a,b,v,c,d;
   LD s1,s2,s3,s4;
   LD sum;
+  point* last;
   for1tr(i, k) {
     scanf("%d", &q[i]);
     sum = 0;
@@ -152,6 +174,8 @@ int main() {
       scanf("%d %d %d", &a, &b, &v);
       if (j==1) {
         start[i] = make_pair(a,b);
+      } else {
+        last->next = make_pair(a,b);
       }
       p[a][b].presum = sum;
       sum += v;
@@ -159,20 +183,18 @@ int main() {
       p[a][b].a = i;
       p[a][b].b = j;
       p[a][b].sum = sum;
+      last = &p[a][b];
     }
+    ed[i] = make_pair(a,b);
     allsum[i] = sum;
   }
   scanf("%d", &v);
   while(v--) {
     scanf(" %s", buffer);
     if(buffer[0] == 'A') {
-      scanf("%d %d %d %d", &a, &b, &c, &d);
-      s1 = make(a-1,b-1);
-      s2 = make(a-1,d);
-      s3 = make(c, b-1);
-      s4 = make(c,d);
-      // printf("%lld %lld %lld %lld\n", s1, s2, s3, s4);
-      printf("%lld\n", s1+s4-s2-s3);
+      scanf("%d %d %d %d", &xl, &yl, &xr, &yr);
+      s1 = make();
+      printf("%lld\n", s1);
     } else {
       scanf("%d", &a);
       off[a] = !off[a];
