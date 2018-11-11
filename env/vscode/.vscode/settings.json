@@ -1,5 +1,6 @@
 {
-    // Local mingw64 install directory.
+    // Local mingw install directory.
     // Must have \\bin and \\include.
+    // Download mingw from https://sourceforge.net/projects/mingw-w64/
     "LOCAL.mingwRootPath": "C:\\Program Files\\YOUR_LOCAL_mingw64\\"
 }
