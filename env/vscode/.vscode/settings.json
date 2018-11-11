@@ -1,0 +1,5 @@
+{
+    // Local mingw64 install directory.
+    // Must have \\bin and \\include.
+    "LOCAL.mingwRootPath": "C:\\Program Files\\YOUR_LOCAL_mingw64\\"
+}
