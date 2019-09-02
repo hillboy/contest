@@ -1,14 +1,13 @@
-// https://www.spoj.com/problems/FASTFLOW/
+// max match with dinic
 #include <algorithm>
 #include <stdio.h>
 #include <string.h>
+#include <unordered_map>
 #define maxn 5011
 #define maxm 61000
 
 using namespace std;
-
 typedef long long int LD;
-
 struct Graph {
   int n, et, ind[maxn], e[maxm], last[maxm];
 
@@ -101,32 +100,19 @@ struct DinicGraph : public FlowGraph {
 
       for (j = ind[que[i]]; j; j = last[j])
         if ((!checked[e[j]] || checked[e[j]] == nowlv) && f[j] < cap[j]) {
-          // For undirected graph, use
-          // if (!checked[e[j]]) {
-          //   que[++qt] = e[j];
-          //   checked[e[j]] = nowlv;
-          // }
-
-          // if (f[j ^ 1]) {
-          //   resi.adde(que[i], e[j], f[j ^ 1], j);
-          // } else {
-          //   resi.adde(que[i], e[j], cap[j] - f[j], j);
-          // }
-
-          // For directed graph, use:
-          // if ((j & 1) && f[j ^ 1]) {
-          //   resi.adde(que[i], e[j], f[j ^ 1], j);
-          //   if (!checked[e[j]]) {
-          //     que[++qt] = e[j];
-          //     checked[e[j]] = nowlv;
-          //   }
-          // } else if (!(j & 1)) {
-          //   resi.adde(que[i], e[j], cap[j] - f[j], j);
-          //   if (!checked[e[j]]) {
-          //     que[++qt] = e[j];
-          //     checked[e[j]] = nowlv;
-          //   }
-          // }
+          if ((j & 1) && f[j ^ 1]) {
+            resi.adde(que[i], e[j], f[j ^ 1], j);
+            if (!checked[e[j]]) {
+              que[++qt] = e[j];
+              checked[e[j]] = nowlv;
+            }
+          } else if (!(j & 1)) {
+            resi.adde(que[i], e[j], cap[j] - f[j], j);
+            if (!checked[e[j]]) {
+              que[++qt] = e[j];
+              checked[e[j]] = nowlv;
+            }
+          }
         }
     }
 
@@ -159,16 +145,69 @@ struct DinicGraph : public FlowGraph {
   }
 } G;
 
-int main() {
-  int i, n, m, a, b;
-  long long int c;
-  scanf("%d %d", &n, &m);
-  G.init(n, 1, n);
-  for (i = 1; i <= m; i++) {
-    scanf("%d %d %lld", &a, &b, &c);
-    if (a != b)
-      G.addee(a, b, c);
+struct rect {
+  int x1, x2, y1, y2;
+  void input() { scanf("%d %d %d %d", &x1, &y1, &x2, &y2); }
+} rects[51];
+
+struct uniqset {
+  int n, ed;
+  int que[1000];
+  void add(int a) { que[++n] = a; }
+  uniqset(int m) {
+    n = 2;
+    que[1] = 1;
+    que[2] = m + 1;
   }
-  printf("%lld\n", G.maxflow());
+  void prepare() {
+    sort(&que[1], &que[1 + n]);
+    ed = std::unique(&que[1], &que[1 + n]) - que;
+    n = ed - 1;
+  }
+  int find(int a) { return lower_bound(&que[1], &que[ed], a) - que; }
+};
+
+bool checked[200][200];
+
+int main() {
+  int i, n, m;
+  scanf("%d %d", &n, &m);
+  uniqset row(n), col(n);
+  for (i = 1; i <= m; i++) {
+    rects[i].input();
+    row.add(rects[i].x1);
+    row.add(rects[i].x2 + 1);
+    col.add(rects[i].y1);
+    col.add(rects[i].y2 + 1);
+  }
+  row.prepare();
+  col.prepare();
+  G.init(2 + row.n + col.n, 1, 2);
+
+  for (i = 1; i <= m; i++) {
+    int x1 = row.find(rects[i].x1);
+    int x2 = row.find(rects[i].x2 + 1);
+    int y1 = col.find(rects[i].y1);
+    int y2 = col.find(rects[i].y2 + 1);
+
+    for (int x = x1; x < x2; x++) {
+      for (int y = y1; y < y2; y++) {
+        if (!checked[x][y]) {
+          checked[x][y] = 1;
+          G.addee(2 + x, 2 + row.n + y, 1000000000);
+        }
+      }
+    }
+  }
+  for (int x = 1; x < row.n; x++) {
+    G.addee(1, 2 + x, row.que[x + 1] - row.que[x]);
+  }
+  for (int y = 1; y < col.n; y++) {
+    G.addee(2 + row.n + y, 2, col.que[y + 1] - col.que[y]);
+  }
+
+  LD ans = G.maxflow();
+  printf("%d\n", (int)ans);
+
   return 0;
 }
